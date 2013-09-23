@@ -1,36 +1,18 @@
 # Analysis tools for job logs.
 module JobAnalysis
-  class UnknownResponseCode
-    def include?(resp_code)
-      true
-    end
-  end
-
   def log_key
     "#{ident}_log"
-  end
-
-  def response_buckets
-    [
-      [(100...200), '1xx'],
-      [(200...300), '2xx'],
-      [(300...400), '3xx'],
-      [(400...500), '4xx'],
-      [(500...600), '5xx'],
-      [UnknownResponseCode.new, 'unknown']
-    ]
   end
 
   def reset_analysis
     redis.multi do
       redis.hdel(ident, 'last_seen_log_index')
-      
-      response_buckets.each { |_, rb| redis.hdel(ident, rb) }
+      RESPONSE_BUCKETS.each { |_, rb| redis.hdel(ident, rb) }
     end
   end
 
   def analyze
-    start = redis.hget(ident, 'last_seen_log_index') || 0
+    start = last_seen_log_index
 
     resps = redis.multi do
       redis.lrange(log_key, start, -1)
@@ -52,7 +34,7 @@ module JobAnalysis
           end
         end
 
-        response_buckets.each do |rb, bucket|
+        RESPONSE_BUCKETS.each do |rb, bucket|
           if rb.include?(response_code)
             redis.hincrby(ident, bucket, 1)
             break

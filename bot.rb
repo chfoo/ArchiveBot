@@ -62,4 +62,7 @@ at_exit do
   Celluloid::Actor[:log_analyzer].stop
 end
 
-bot.start
+require 'irb'
+IRB.start
+
+# bot.start

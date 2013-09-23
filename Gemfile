@@ -7,3 +7,8 @@ gem 'redis'
 gem 'json'
 gem 'trollop'
 gem 'uuidtools'
+
+group :dashboard do
+  gem 'webmachine'
+  gem 'reel'
+end
