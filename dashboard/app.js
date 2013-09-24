@@ -213,6 +213,10 @@
   // ROUTES
   // -------------------------------------------------------------------------
 
+  Dashboard.Router.map(function () {
+    this.resource('history', { path: '/histories/:url' });
+  });
+
   Dashboard.IndexRoute = Ember.Route.extend({
     model: function () {
       return messageProcessor;

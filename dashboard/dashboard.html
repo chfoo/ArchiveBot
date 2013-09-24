@@ -66,7 +66,10 @@
       {{#view Dashboard.JobView finishedBinding=job.finished
           identBinding=job.ident jobListBinding=Dashboard.messageProcessor}}
         <header>
-          <h1 class="url">{{job.urlForDisplay}}</h1>
+          <h1 class="url">
+            {{job.urlForDisplay}}
+            {{#link-to 'history' url=job.url}}History{{/link-to}}
+          </h1>
           <h1 class="ident terminal">{{job.ident}}</h1>
           {{view Dashboard.ProportionView okPercentageBinding=job.okPercentage
               errorPercentageBinding=job.errorPercentage}}

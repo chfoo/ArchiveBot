@@ -55,6 +55,19 @@ h1 {
   float: left;
 }
 
+.job h1.url a {
+  text-transform: lowercase;
+  color: hsl(240, 100%, 75%);
+}
+
+.job h1.url a:before {
+  content: '[';
+}
+
+.job h1.url a:after {
+  content: ']';
+}
+
 .job h1.ident {
   float: right;
 }
