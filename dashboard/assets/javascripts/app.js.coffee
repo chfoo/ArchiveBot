@@ -4,7 +4,18 @@ window.Dashboard = Ember.Application.create()
 # MODELS
 # ----------------------------------------------------------------------------
 
-Dashboard.Job = Ember.Object.extend
+Calculations = Ember.Mixin.create
+  mibDownloaded: (->
+    (@get('bytes_downloaded') / (1024 * 1024)).toFixed(2)
+  ).property('bytes_downloaded')
+
+  queuedAtDate: (->
+    d = new Date(@get('queued_at') * 1000)
+
+    "#{d.toDateString()} #{d.toTimeString()}"
+  ).property('queued_at')
+
+Dashboard.Job = Ember.Object.extend Calculations,
   okPercentage: (->
     total = @get 'total'
     errored = @get 'error_count'
@@ -18,10 +29,6 @@ Dashboard.Job = Ember.Object.extend
 
     100 * (errored / total)
   ).property('total', 'error_count')
-
-  mibDownloaded: (->
-    (@get('bytes_downloaded') / (1024 * 1024)).toFixed(2)
-  ).property('bytes_downloaded')
 
   urlForDisplay: (->
     url = @get 'url'
@@ -57,11 +64,18 @@ Dashboard.Job = Ember.Object.extend
     @get('aborted') || @get('completed')
   ).property('aborted', 'completed')
 
+Dashboard.DownloadHistoryEntry = Ember.Object.extend Calculations, {}
+
 Dashboard.History = Ember.Object.extend
   fetch: ->
-    $.getJSON(@get 'path').then(=>
+    $.getJSON(@get 'path').then (data) =>
+      @set 'total', 999
+      @set 'downloads', data['rows'].map (row) ->
+        Dashboard.DownloadHistoryEntry.create row['doc']
 
-    )
+  path: (->
+    "/histories/#{@get('url')}"
+  ).property('url')
 
 Dashboard.DownloadUpdateEntry = Ember.Object.extend
   classNames: (->
@@ -167,8 +181,8 @@ Dashboard.HistoryRoute = Ember.Route.extend
     model = Dashboard.History.create
       url: params['url']
 
-    model.fetch().then ->
-      model
+    model.fetch()
+    model
 
   serialize: (model) ->
     { url: model.get 'url' }

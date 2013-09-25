@@ -45,6 +45,37 @@
       {{/each}}
     </script>
 
+    <script type="text/x-handlebars" data-template-name="history">
+      <article class="history">
+        <header>
+          <h1 class="url">{{url}}</h1>
+          <h1 class="count">{{downloads.length}} of {{total}} downloads</h1>
+        </header>
+        <section class="report">
+          <table>
+            <thead>
+              <tr>
+                <th>Started</th>
+                <th>Fetch depth</th>
+                <th>MiB downloaded</th>
+                <th>Archived at</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each downloads}}
+                <tr>
+                  <td>{{queuedAtDate}}</td>
+                  <td>{{depth}}</td>
+                  <td>{{mibDownloaded}}</td>
+                  <td>{{archive_url}}
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </section>
+      </article>
+    </script>
+
     <script type="text/x-handlebars" data-template-name="proportion-view">
       <div class="ok proportion"></div>
       <div class="error proportion"></div>
