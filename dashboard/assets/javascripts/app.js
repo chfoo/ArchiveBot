@@ -214,12 +214,26 @@
   // -------------------------------------------------------------------------
 
   Dashboard.Router.map(function () {
-    this.resource('history', { path: '/histories/:url' });
+    this.resource('history', { path: '/histories/*url' });
   });
 
   Dashboard.IndexRoute = Ember.Route.extend({
     model: function () {
       return messageProcessor;
+    }
+  });
+
+  Dashboard.HistoryRoute = Ember.Route.extend({
+    model: function(params) {
+      return $.getJSON('/history/' + params['url']).then(function(data) {
+        return Ember.Object.create($.extend(data, {
+          url: params['url']
+        }));
+      });
+    },
+
+    serialize: function(model) {
+      return { url: model.get('url') };
     }
   });
 

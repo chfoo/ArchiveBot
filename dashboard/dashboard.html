@@ -2,8 +2,8 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="/reset.css" />
-    <link rel="stylesheet" type="text/css" href="/app.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/reset.css" />
+    <link rel="stylesheet" type="text/css" href="/assets/app.css" />
     <title>ArchiveBot dashboard</title>
   </head>
 
@@ -12,10 +12,10 @@
       This dashboard is a Javascript monstrosity, yo.
     </noscript>
 
-    <script type="text/javascript" src="/jquery.js"></script>
-    <script type="text/javascript" src="/handlebars.js"></script>
-    <script type="text/javascript" src="/ember.js"></script>
-    <script type="text/javascript" src="/app.js"></script>
+    <script type="text/javascript" src="/assets/jquery.js"></script>
+    <script type="text/javascript" src="/assets/handlebars.js"></script>
+    <script type="text/javascript" src="/assets/ember.js"></script>
+    <script type="text/javascript" src="/assets/app.js"></script>
 
     <script type="text/javascript">
       (function () {
@@ -68,7 +68,7 @@
         <header>
           <h1 class="url">
             {{job.urlForDisplay}}
-            {{#link-to 'history' url=job.url}}History{{/link-to}}
+            {{#link-to 'history' job}}History{{/link-to}}
           </h1>
           <h1 class="ident terminal">{{job.ident}}</h1>
           {{view Dashboard.ProportionView okPercentageBinding=job.okPercentage
