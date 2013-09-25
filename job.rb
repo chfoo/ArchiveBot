@@ -30,6 +30,13 @@ class Job < Struct.new(:uri, :redis)
   # Returns a UNIX timestamp as an integer.
   attr_reader :queued_at
 
+  # The UTC offset of the queued_at timestamp.
+  #
+  # Expressed as an offset in seconds.
+  #
+  # Returns an integer.
+  attr_reader :queued_at_utc_offset
+
   # Whether this job was aborted.
   #
   # Returns a boolean.
@@ -133,6 +140,7 @@ class Job < Struct.new(:uri, :redis)
       @warc_size = h['warc_size'].to_i
       @error_count = h['error_count'].to_i
       @queued_at = h['queued_at'].to_i
+      @queued_at_utc_offset = h['queued_at_utc_offset'].to_i
 
       response_buckets.each do |_, bucket, attr|
         instance_variable_set("@#{attr}", h[bucket.to_s].to_i)
@@ -151,7 +159,12 @@ class Job < Struct.new(:uri, :redis)
   end
 
   def queue
-    redis.hset(ident, 'queued_at', Time.now.to_i)
+    t = Time.now
+
+    redis.hmset(ident,
+                'queued_at', t.to_i,
+                'queued_at_utc_offset', t.utc_offset)
+
     redis.lpush('pending', ident)
   end
 
@@ -192,6 +205,7 @@ class Job < Struct.new(:uri, :redis)
       'error_count' => error_count,
       'ident' => ident,
       'queued_at' => queued_at,
+      'queued_at_utc_offset' => queued_at_utc_offset,
       'url' => url,
       'warc_size' => warc_size
     }.to_json
