@@ -16,9 +16,10 @@ class HistoryDb
       :include_docs => true,
       :limit => limit,
       :reduce => false,
-      :startkey_docid => start_at,
-      :startkey => [url, 0],
-      :endkey => endkey(url, prefix)
+      :descending => true,
+      :endkey_docid => start_at,
+      :endkey => [url, 0],
+      :startkey => endkey(url, prefix)
     }.reject! { |_,v| v.nil? }
 
     @db.view('jobs/by_url_and_queue_time', params, @credentials)
@@ -29,9 +30,10 @@ class HistoryDb
       :limit => limit,
       :group => true,
       :group_level => 1,
-      :startkey_docid => start_at,
-      :startkey => [url, 0],
-      :endkey => endkey(url, prefix)
+      :descending => true,
+      :endkey_docid => start_at,
+      :endkey => [url, 0],
+      :startkey => endkey(url, prefix)
     }.reject! { |_,v| v.nil? }
 
     @db.view('jobs/by_url_and_queue_time', params, @credentials)
