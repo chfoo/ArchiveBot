@@ -11,4 +11,6 @@ gem 'uuidtools'
 group :dashboard do
   gem 'reel'
   gem 'json'
+  gem 'webmachine', :git => 'https://github.com/seancribbs/webmachine-ruby.git'
+  gem 'webmachine-sprockets', :git => 'https://github.com/lgierth/webmachine-sprockets.git'
 end
