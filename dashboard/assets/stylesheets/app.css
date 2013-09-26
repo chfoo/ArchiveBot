@@ -68,7 +68,7 @@ h1 {
   content: ']';
 }
 
-.job h1.ident {
+.job h1.ident, .job h1.count {
   float: right;
 }
 
@@ -130,20 +130,29 @@ h1 {
   text-transform: uppercase;
 }
 
-.history h1.url {
-  float: left;
-}
-
-.history h1.count {
-  float: right;
-}
-
-.history .report {
+.history {
   clear: both;
 }
 
-.history .report table {
+.history table {
   width: 100%;
+}
+
+.history th {
+  text-align: left;
+  font-variant: small-caps;
+}
+
+.history th, .history tr {
+  margin-bottom: 0.5em;
+}
+
+.history tr.completed {
+  background-color: hsl(120, 100%, 10%);
+}
+
+.history tr.aborted {
+  background-color: hsl(0, 100%, 10%);
 }
 
 /* vim: set ts=2 sw=2 et tw=78: */

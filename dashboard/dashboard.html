@@ -16,20 +16,11 @@
     <script type="text/javascript" src="/assets/handlebars.js"></script>
     <script type="text/javascript" src="/assets/ember.js"></script>
     <script type="text/javascript" src="/assets/app.js"></script>
-
-    <script type="text/javascript">
-      (function () {
-        "use strict";
-
-        var Socket = "MozWebSocket" in window ? MozWebSocket : WebSocket;
-        var ws = new Socket('ws://' + window.location.host + '/stream');
-        var processor = window.Dashboard.messageProcessor;
-
-        ws.onmessage = function(msg) {
-          processor.process(msg.data);
-        }
-      })();
-    </script>
+    <script type="text/javascript" src="/assets/models.js"></script>
+    <script type="text/javascript" src="/assets/routes.js"></script>
+    <script type="text/javascript" src="/assets/controllers.js"></script>
+    <script type="text/javascript" src="/assets/views.js"></script>
+    <script type="text/javascript" src="/assets/boot.js"></script>
 
     <script type="text/x-handlebars">
       <h1>#archivebot @ irc.efnet.net</h1>
@@ -38,42 +29,56 @@
     </script>
 
     <script type="text/x-handlebars" data-template-name="index">
-      {{#each job in jobs}}
+      {{#each job in model.jobs}}
         {{partial "job"}}
       {{else}}
         No running jobs
       {{/each}}
     </script>
 
-    <script type="text/x-handlebars" data-template-name="history">
-      <article class="history">
+    <script type="text/x-handlebars" data-template-name="job">
+      {{#view Dashboard.JobView finishedBinding=finished
+          identBinding=ident jobListBinding=Dashboard.messageProcessor}}
         <header>
-          <h1 class="url">{{url}}</h1>
-          <h1 class="count">{{downloads.length}} of {{total}} downloads</h1>
+          <h1 class="url">
+            {{urlForDisplay}}
+          </h1>
         </header>
-        <section class="report">
-          <table>
-            <thead>
-              <tr>
-                <th>Started</th>
-                <th>Fetch depth</th>
-                <th>MiB downloaded</th>
-                <th>Archived at</th>
+
+        {{outlet}}
+      {{/view}}
+    </script>
+
+    <script type="text/x-handlebars" data-template-name="job/history">
+      <section class="history">
+        <table>
+          <thead>
+            <tr>
+              <th>Started</th>
+              <th>Fetch depth</th>
+              <th>Downloaded (MB)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {{#each records}}
+              <tr {{bind-attr class=classNames}}>
+                <td>{{queuedAtDate}}</td>
+                <td>{{depth}}</td>
+                <td>{{mbDownloaded}}</td>
+                <td>
+                  {{#if downloaded}}
+                    <a {{bind-attr href=archive_url}}>Archive link</a> ({{warcSize}})
+                  {{/if}} 
+                  {{#if aborted}}
+                    Aborted
+                  {{/if}}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {{#each downloads}}
-                <tr>
-                  <td>{{queuedAtDate}}</td>
-                  <td>{{depth}}</td>
-                  <td>{{mibDownloaded}}</td>
-                  <td>{{archive_url}}
-                </tr>
-              {{/each}}
-            </tbody>
-          </table>
-        </section>
-      </article>
+            {{/each}}
+          </tbody>
+        </table>
+      </section>
     </script>
 
     <script type="text/x-handlebars" data-template-name="proportion-view">
@@ -99,7 +104,7 @@
         <header>
           <h1 class="url">
             {{job.urlForDisplay}}
-            {{#link-to 'history' job}}History{{/link-to}}
+            {{#link-to 'job.history' job}}History{{/link-to}}
           </h1>
           <h1 class="ident terminal">{{job.ident}}</h1>
           {{view Dashboard.ProportionView okPercentageBinding=job.okPercentage
@@ -108,7 +113,7 @@
         {{view Dashboard.LogView incomingBinding=job.latestEntries
             autoScrollBinding=job.autoScroll}}
         <section>
-          <span class="downloaded">{{job.mibDownloaded}} MiB downloaded</span>
+          <span class="downloaded">{{job.mbDownloaded}} MB downloaded</span>
           <span>1xx: {{job.r1xx}}</span>
           <span>2xx: {{job.r2xx}}</span>
           <span>3xx: {{job.r3xx}}</span>
