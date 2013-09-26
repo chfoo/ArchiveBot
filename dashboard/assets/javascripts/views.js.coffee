@@ -1,14 +1,16 @@
 Dashboard.JobView = Ember.View.extend
   classNameBindings: ['finished']
   classNames: ['job']
-
+  layoutName: 'job-layout'
   tagName: 'article'
 
-  hideWhenFinished: (->
+  finishedBinding: 'controller.finished'
+
+  didInsertElement: ->
     @$().on 'transitionend webkitTransitionEnd oTransitionEnd otransitionend', =>
-      @remove()
-      @get('jobList').unregisterJob @get('ident')
-  ).observes('finished')
+      if @get('finished')
+        @remove()
+        @get('controller').unregister()
 
 Dashboard.ProportionView = Ember.View.extend
   classNames: ['success-bar']

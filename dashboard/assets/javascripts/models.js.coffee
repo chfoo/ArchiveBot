@@ -6,53 +6,27 @@ Calculations = Ember.Mixin.create
 Dashboard.Job = Ember.Object.extend Calculations,
   idBinding: 'ident'
 
-  okPercentage: (->
-    total = @get 'total'
-    errored = @get 'error_count'
-
-    100 * ((total - errored) / total)
-  ).property('total', 'error_count')
-
-  errorPercentage: (->
-    total = @get 'total'
-    errored = @get 'error_count'
-
-    100 * (errored / total)
-  ).property('total', 'error_count')
-
-  urlForDisplay: (->
-    url = @get 'url'
-
-    if url && url.length > 63
-      url.slice(0, 61) + '...'
-    else
-      url
-  ).property('url')
-
-  generateCompletionMessage: (->
-    if @get('completed')
-      entry = Ember.Object.create
-        text: 'Job completed'
-        classNames: 'completed'
-
-      @addLogEntries [entry]
-  ).observes('completed')
-
-  generateAbortMessage: (->
-    if @get('aborted')
-      entry = Ember.Object.create
-        text: 'Job aborted'
-        classNames: 'aborted'
-
-      @addLogEntries [entry]
-  ).observes('aborted')
-
   addLogEntries: (entries) ->
     @set 'latestEntries', entries
 
   finished: (->
     @get('aborted') || @get('completed')
   ).property('aborted', 'completed')
+
+  # Properties directly copied from a JSON representation of this job.
+  #
+  # See amplify.
+  directCopiedProperties: [
+    'url', 'ident',
+    'r1xx', 'r2xx', 'r3xx', 'r4xx', 'r5xx', 'runk',
+    'total', 'error_count',
+    'bytes_downloaded'
+  ]
+
+  amplify: (json) ->
+    props = {}
+    props[key] = json[key] for key in @directCopiedProperties
+    @setProperties props
 
 Dashboard.JobHistoryEntry = Ember.Object.extend Calculations,
   # Returns this job's queuing timestamp in the browser's timezone and locale.
@@ -74,6 +48,10 @@ Dashboard.JobHistoryEntry = Ember.Object.extend Calculations,
     new Date(stored + browserOffset).toLocaleString()
   ).property('queued_at')
 
+  warcSizeMb: (->
+    (@get('warc_size') / (1000 * 1000)).toFixed(2)
+  ).property('warc_size')
+
   classNames: (->
     classes = []
 
@@ -86,9 +64,11 @@ Dashboard.JobHistoryEntry = Ember.Object.extend Calculations,
 Dashboard.JobHistory = Ember.Object.extend
   fetch: ->
     $.getJSON(@get 'path').then (data) =>
-      @set 'total', 999
+      @set 'total', data['rows'].length
       @set 'records', data['rows'].map (row) ->
         Dashboard.JobHistoryEntry.create row['doc']
+
+      this
 
   path: (->
     "/histories/#{@get('url')}"
@@ -110,7 +90,7 @@ Dashboard.DownloadUpdateEntry = Ember.Object.extend
 
 Dashboard.MessageProcessor = Ember.Object.extend
   registerJob: (ident) ->
-    job = Dashboard.Job.create autoScroll: true
+    job = Dashboard.Job.create autoScroll: true, messageProcessor: this
 
     @get('jobIndex')[ident] = job
     @get('jobs').pushObject job
@@ -160,20 +140,12 @@ Dashboard.MessageProcessor = Ember.Object.extend
       aborted: json['aborted']
       completed: json['completed']
 
-  directCopiedProperties: [
-    'url', 'ident',
-    'r1xx', 'r2xx', 'r3xx', 'r4xx', 'r5xx', 'runk',
-    'total', 'error_count',
-    'bytes_downloaded'
-  ]
-
   processDownloadUpdate: (json, job) ->
-    props = {}
-    props[key] = json[key] for key in @directCopiedProperties
-    job.setProperties props
+    job.amplify(json)
 
     job.addLogEntries(json['entries'].map (item) ->
       Dashboard.DownloadUpdateEntry.create(item)
     )
+
 
 # vim:ts=2:sw=2:et:tw=78

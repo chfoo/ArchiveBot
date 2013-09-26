@@ -24,61 +24,77 @@
 
     <script type="text/x-handlebars">
       <h1>#archivebot @ irc.efnet.net</h1>
-
       {{outlet}}
     </script>
 
     <script type="text/x-handlebars" data-template-name="index">
-      {{#each job in model.jobs}}
-        {{partial "job"}}
-      {{else}}
-        No running jobs
-      {{/each}}
+      <ul class="dashboard-job-list">
+        {{#each job in jobs}}
+          <li>{{partial "job"}}</li>
+        {{else}}
+          No running jobs
+        {{/each}}
+      </ul>
+    </script>
+
+    <script type="text/x-handlebars" data-template-name="job-layout">
+      <header>
+        <h1 class="url">
+          {{urlForDisplay}}
+          {{#unless hideHistoryLink}}
+            <a {{bindAttr href=historyRoute}}>History</a>
+          {{/unless}}
+        </h1>
+        <h1 class="ident terminal">{{ident}}</h1>
+      </header>
+      {{yield}}
     </script>
 
     <script type="text/x-handlebars" data-template-name="job">
-      {{#view Dashboard.JobView finishedBinding=finished
-          identBinding=ident jobListBinding=Dashboard.messageProcessor}}
-        <header>
-          <h1 class="url">
-            {{urlForDisplay}}
-          </h1>
-        </header>
-
-        {{outlet}}
-      {{/view}}
+      {{outlet}}
     </script>
 
-    <script type="text/x-handlebars" data-template-name="job/history">
-      <section class="history">
-        <table>
-          <thead>
-            <tr>
-              <th>Started</th>
-              <th>Fetch depth</th>
-              <th>Downloaded (MB)</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {{#each records}}
-              <tr {{bind-attr class=classNames}}>
-                <td>{{queuedAtDate}}</td>
-                <td>{{depth}}</td>
-                <td>{{mbDownloaded}}</td>
-                <td>
-                  {{#if downloaded}}
-                    <a {{bind-attr href=archive_url}}>Archive link</a> ({{warcSize}})
-                  {{/if}} 
-                  {{#if aborted}}
-                    Aborted
-                  {{/if}}
-                </td>
+    <script type="text/x-handlebars" data-template-name="history">
+      {{#view Dashboard.JobView}}
+        <section class="history">
+          <table>
+            <thead>
+              <tr>
+                <th>Started</th>
+                <th>Fetch depth</th>
+                <th>Downloaded</th>
+                <th>Response distribution</th>
+                <th></th>
               </tr>
-            {{/each}}
-          </tbody>
-        </table>
-      </section>
+            </thead>
+            <tbody>
+              {{#each records}}
+                <tr {{bind-attr class=classNames}}>
+                  <td>{{queuedAtDate}}</td>
+                  <td>{{depth}}</td>
+                  <td>{{mbDownloaded}} MB</td>
+                  <td>Good</td>
+                  <td>
+                    {{#if completed}}
+                      <a {{bind-attr href=archive_url}}>WARC</a>
+                      ({{warcSizeMb}} MB)
+                    {{/if}} 
+                    {{#if aborted}}
+                      Aborted
+                    {{/if}}
+                  </td>
+                </tr>
+              {{else}}
+                <tr>
+                  <td colspan=4>
+                    No recorded history
+                  </td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>
+        </section>
+      {{/view}}
     </script>
 
     <script type="text/x-handlebars" data-template-name="proportion-view">
@@ -99,16 +115,10 @@
     </script>
 
     <script type="text/x-handlebars" data-template-name="_job">
-      {{#view Dashboard.JobView finishedBinding=job.finished
-          identBinding=job.ident jobListBinding=Dashboard.messageProcessor}}
+      {{#view Dashboard.JobView}}
         <header>
-          <h1 class="url">
-            {{job.urlForDisplay}}
-            {{#link-to 'job.history' job}}History{{/link-to}}
-          </h1>
-          <h1 class="ident terminal">{{job.ident}}</h1>
-          {{view Dashboard.ProportionView okPercentageBinding=job.okPercentage
-              errorPercentageBinding=job.errorPercentage}}
+          {{view Dashboard.ProportionView okPercentageBinding=okPercentage
+            errorPercentageBinding=errorPercentage}}
         </header>
         {{view Dashboard.LogView incomingBinding=job.latestEntries
             autoScrollBinding=job.autoScroll}}

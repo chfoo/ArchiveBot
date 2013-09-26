@@ -1,12 +1,12 @@
 html {
-  font-family: 'FreeSans', 'Helvetica Neue', 'Arial', sans-serif;
-  font-size: 16px;
+  font-family: 'Source Sans Pro', 'Helvetica Neue', 'Arial', sans-serif;
+  font-size: 18px;
   background-color: #333;
   color: #ccc;
 }
 
 .terminal {
-  font-family: 'Inconsolata', 'Consolas', 'Monaco', monospace;
+  font-family: 'Source Code Pro', 'Inconsolata', 'Consolas', 'Monaco', monospace;
 }
 
 body {
@@ -23,6 +23,9 @@ h1 {
 
 .job {
   width: 100%;
+}
+
+.dashboard-job-list .job {
   padding-bottom: 1em;
   margin-bottom: 1em;
   border-bottom: 1px solid #222;
@@ -132,6 +135,7 @@ h1 {
 
 .history {
   clear: both;
+  padding-top: 1em;
 }
 
 .history table {
@@ -143,16 +147,23 @@ h1 {
   font-variant: small-caps;
 }
 
-.history th, .history tr {
-  margin-bottom: 0.5em;
+.history th, .history td {
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
 }
 
 .history tr.completed {
   background-color: hsl(120, 100%, 10%);
+  border-bottom: 1px solid hsl(120, 100%, 15%);
+}
+
+.history tr.completed a {
+  color: hsl(120, 100%, 35%);
 }
 
 .history tr.aborted {
   background-color: hsl(0, 100%, 10%);
+  border-bottom: 1px solid hsl(0, 100%, 15%);
 }
 
 /* vim: set ts=2 sw=2 et tw=78: */
