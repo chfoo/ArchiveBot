@@ -151,9 +151,9 @@ class Job < Struct.new(:uri, :redis)
   end
 
   def queue
-    t = Time.now.utc
+    t = Time.now
 
-    redis.hset(ident, 'queued_at', t.to_i)
+    redis.hset(ident, 'queued_at', (t + t.utc_offset).to_i)
     redis.lpush('pending', ident)
   end
 
