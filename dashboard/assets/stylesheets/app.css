@@ -59,15 +59,18 @@ h1 {
 }
 
 .job h1.url a {
-  text-transform: lowercase;
   color: hsl(240, 100%, 75%);
 }
 
-.job h1.url a:before {
+.job h1.url a.history {
+  text-transform: lowercase;
+}
+
+.job h1.url a.history:before {
   content: '[';
 }
 
-.job h1.url a:after {
+.job h1.url a.history:after {
   content: ']';
 }
 
@@ -89,6 +92,10 @@ h1 {
 
 .success-bar .ok {
   background-color: hsl(120, 100%, 25%);
+}
+
+.success-bar .warning {
+  background-color: hsl(60, 100%, 25%);
 }
 
 .success-bar .error {
@@ -133,35 +140,36 @@ h1 {
   text-transform: uppercase;
 }
 
-.history {
+section.history {
   clear: both;
   padding-top: 1em;
 }
 
-.history table {
+section.history table {
   width: 100%;
 }
 
-.history th {
+section.history th {
   text-align: left;
   font-variant: small-caps;
 }
 
-.history th, .history td {
+section.history th, section.history td {
   padding-top: 0.25em;
   padding-bottom: 0.25em;
+  padding-right: 1em;
 }
 
-.history tr.completed {
+section.history tr.completed {
   background-color: hsl(120, 100%, 10%);
   border-bottom: 1px solid hsl(120, 100%, 15%);
 }
 
-.history tr.completed a {
+section.history tr.completed a {
   color: hsl(120, 100%, 35%);
 }
 
-.history tr.aborted {
+section.history tr.aborted {
   background-color: hsl(0, 100%, 10%);
   border-bottom: 1px solid hsl(0, 100%, 15%);
 }

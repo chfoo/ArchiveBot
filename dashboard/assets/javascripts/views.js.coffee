@@ -13,8 +13,7 @@ Dashboard.JobView = Ember.View.extend
         @get('controller').unregister()
 
 Dashboard.ProportionView = Ember.View.extend
-  classNames: ['success-bar']
-
+  classNames: ['proportion-view']
   templateName: 'proportion-view'
 
   tagName: 'div'
@@ -29,6 +28,27 @@ Dashboard.ProportionView = Ember.View.extend
   sizeBars: ->
     @$('.ok').css { width: @get('okPercentage') + '%' }
     @$('.error').css { width: @get('errorPercentage') + '%' }
+
+Dashboard.ResponseDistributionView = Ember.View.extend
+  tagName: 'div'
+  templateName: 'distribution-view'
+
+  didInsertElement: ->
+    @recalculateWidths()
+
+  updateWidths: (->
+    @recalculateWidths()
+  ).observes('item.totalResponses', 'item.responseCountsByBucket')
+
+  recalculateWidths: ->
+    total = @get 'item.totalResponses'
+    counts = @get 'item.responseCountsByBucket'
+
+    for pair in counts
+      [bucket, count] = pair
+      width = (100 * (count / total)) + '%'
+
+      @$(".#{bucket}").css(width: width)
 
 Dashboard.LogView = Ember.View.extend
   classNames: ['terminal', 'log-view']

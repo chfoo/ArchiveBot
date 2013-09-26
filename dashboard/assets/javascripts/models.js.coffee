@@ -3,6 +3,9 @@ Calculations = Ember.Mixin.create
     (@get('bytes_downloaded') / (1000 * 1000)).toFixed(2)
   ).property('bytes_downloaded')
 
+# Response code buckets.
+RESPONSE_BUCKETS = ['r1xx', 'r2xx', 'r3xx', 'r4xx', 'r5xx', 'runk']
+
 Dashboard.Job = Ember.Object.extend Calculations,
   idBinding: 'ident'
 
@@ -18,10 +21,9 @@ Dashboard.Job = Ember.Object.extend Calculations,
   # See amplify.
   directCopiedProperties: [
     'url', 'ident',
-    'r1xx', 'r2xx', 'r3xx', 'r4xx', 'r5xx', 'runk',
     'total', 'error_count',
     'bytes_downloaded'
-  ]
+  ].pushObjects(RESPONSE_BUCKETS)
 
   amplify: (json) ->
     props = {}
@@ -42,15 +44,23 @@ Dashboard.JobHistoryEntry = Ember.Object.extend Calculations,
     browserOffset = new Date().getTimezoneOffset() * 60 * 1000
 
     # Build the date in the browser TZ.
-    #
-    # Why subtraction? Because + on Javascript Dates is implemented using
-    # string concatenation.  Thanks, Javascript.
     new Date(stored + browserOffset).toLocaleString()
   ).property('queued_at')
 
   warcSizeMb: (->
     (@get('warc_size') / (1000 * 1000)).toFixed(2)
   ).property('warc_size')
+
+  totalResponses: (->
+    RESPONSE_BUCKETS.reduce(((acc, bucket) =>
+      acc + @get(bucket)
+    ), 0)
+  ).property(RESPONSE_BUCKETS)
+
+  responseCountsByBucket: (->
+    RESPONSE_BUCKETS.map (bucket) =>
+      [bucket, @get(bucket)]
+  ).property(RESPONSE_BUCKETS)
 
   classNames: (->
     classes = []
