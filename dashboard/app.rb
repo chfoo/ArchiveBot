@@ -89,6 +89,8 @@ end
 
 LogReceiver.supervise_as :log_receiver, opts[:redis], opts[:log_update_channel]
 
+MessageTap.supervise_as :message_tap
+
 at_exit do
   Celluloid::Actor[:log_receiver].stop
 end
