@@ -64,12 +64,12 @@ class GetItemFromQueue(Task):
             self.schedule_retry(item)
         else:
             self.redis.hset(ident, 'started_at', int(time.time()))
-            data = self.redis.hmget(ident, 'url', 'slug', 'log_key')
+            data = self.redis.hmget(ident, 'slug', 'log_key', 'urls_key')
 
             item['ident'] = ident
-            item['url'] = data[0]
-            item['slug'] = data[1]
-            item['log_key'] = data[2]
+            item['slug'] = data[0]
+            item['log_key'] = data[1]
+            item['urls_key'] = data[2]
             item.log_output('Received item %s.' % ident)
             self.complete_item(item)
 
@@ -113,12 +113,47 @@ class PreparePaths(SimpleTask, TargetPathMixin):
         os.makedirs(item_dir)
 
         item['item_dir'] = item_dir
+        item['url_file'] = '%(item_dir)s/%(warc_file_base)s.input_urls' % item
         item['warc_file_base'] = '%s-%s' % (item['slug'], time.strftime("%Y%m%d-%H%M%S"))
         item['source_warc_file'] = '%(item_dir)s/%(warc_file_base)s.warc.gz' % item
         item['source_info_file'] = '%(item_dir)s/%(warc_file_base)s.json' % item
         item['cookie_jar'] = '%(item_dir)s/cookies.txt' % item
 
         self.set_target_paths(item)
+
+class WriteUrlManifest(SimpleTask):
+    def __init__(self, redis):
+        SimpleTask.__init__(self, 'WriteUrlManifest')
+        self.redis = redis
+
+    def process(self, item):
+        urls = self.get_urls(item['urls_key'])
+
+        with open(item['url_file'], 'w') as f:
+            for url in urls:
+                f.write(url)
+
+    # We use SCAN here because:
+    #
+    # 1. ArchiveBot's Redis instance cannot be paused by long commands
+    # 2. ArchiveBot users are crazy and will throw many, many URLs into a
+    #    single !ao < command
+    #
+    # SCAN isn't yet supported by redis-py, so we drop down a level.
+    def get_urls(self, key):
+        cursor = 0
+        aggregate = set()
+
+        while True:
+            cursor, urls = self.redis.execute_command(
+                    'sscan', key, cursor, 'count', 1000)
+
+            aggregate |= set(urls)
+
+            if int(cursor) == 0:
+                break
+
+        return aggregate
 
 class MoveFiles(SimpleTask):
     def __init__(self):
@@ -297,6 +332,7 @@ pipeline = Pipeline(
     GetItemFromQueue(r),
     SetFetchDepth(r),
     PreparePaths(),
+    WriteUrlManifest(r),
     WriteInfo(r),
     WgetDownload([WGET_LUA,
         '-U', USER_AGENT,
@@ -322,7 +358,7 @@ pipeline = Pipeline(
         '--wait', '0.25',
         '--random-wait',
         '--lua-script', 'archivebot.lua',
-        ItemInterpolation('%(url)s')
+        '-i', ItemInterpolation('%(url_file)s')
     ],
     accept_on_exit_code=AcceptAny(),
     env={

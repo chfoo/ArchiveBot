@@ -20,10 +20,18 @@ require File.expand_path('../job_analysis', __FILE__)
 #
 # As you may have guessed, none of ArchiveBot's facilities really use the
 # second pattern.
-class Job < Struct.new(:uri, :redis)
+class Job
   include JobAnalysis
 
   ARCHIVEBOT_V0_NAMESPACE = UUIDTools::UUID.parse('82244de1-c354-4c89-bf2b-f153ce23af43')
+
+  # The target of this archive job.
+  #
+  # Returns a JobTarget.
+  attr_reader :target
+
+  # The Redis connection that this job will use for fetches and updates.
+  attr_reader :redis
 
   # When this job entered the queue.  Expressed in UTC.
   #
@@ -138,16 +146,23 @@ class Job < Struct.new(:uri, :redis)
   end
 
   def self.from_ident(ident, redis)
-    url = redis.hget(ident, 'url')
-    return unless url
+    data = redis.hmget(ident, 'target', 'target_type')
+    return unless data.values.all?
 
-    new(URI.parse(url), redis).tap(&:amplify)
+    jt = JobTarget.new(data['target'], data['target_type'])
+
+    new(jt, redis).tap(&:amplify)
   end
 
   def self.working(redis)
     idents = redis.lrange('working', 0, -1)
 
     idents.map { |ident| from_ident(ident, redis) }
+  end
+
+  def initialize(target, redis)
+    @target = target
+    @redis = redis
   end
 
   def aborted?
@@ -167,7 +182,7 @@ class Job < Struct.new(:uri, :redis)
   end
 
   def ident
-    @ident ||= UUIDTools::UUID.sha1_create(ARCHIVEBOT_V0_NAMESPACE, uri.normalize.to_s).to_i.to_s(36)
+    @ident ||= UUIDTools::UUID.sha1_create(ARCHIVEBOT_V0_NAMESPACE, target.to_s).to_i.to_s(36)
   end
 
   def ignore_patterns_set_key
@@ -176,6 +191,10 @@ class Job < Struct.new(:uri, :redis)
 
   def log_key
     "#{ident}_log"
+  end
+
+  def urls_key
+    "#{ident}_urls"
   end
 
   def add_ignore_pattern(pattern)
@@ -221,6 +240,7 @@ class Job < Struct.new(:uri, :redis)
 
   alias_method :reload, :amplify
 
+  # TODO
   def url
     uri.to_s
   end
@@ -245,12 +265,13 @@ class Job < Struct.new(:uri, :redis)
   end
 
   def register(depth, started_by, started_in)
-    redis.hmset(ident, 'url', url,
-                       'fetch_depth', depth,
+    redis.hmset(ident, 'fetch_depth', depth,
                        'log_key', log_key,
                        'slug', "#{uri.host}-#{depth}",
                        'started_by', started_by,
                        'started_in', started_in)
+
+    redis.sadd(urls_key, url)
   end
 
   def exists?
@@ -278,6 +299,7 @@ class Job < Struct.new(:uri, :redis)
       'started_at' => started_at,
       'started_by' => started_by,
       'started_in' => started_in,
+      # TODO: hmm
       'url' => url,
       'warc_size' => warc_size
     }.tap do |h|

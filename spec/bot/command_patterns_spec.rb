@@ -74,4 +74,27 @@ describe CommandPatterns do
       md[2].should == '--ignores=blogs --someother=param'
     end
   end
+
+  describe 'Archiveonly-many command' do
+    let(:regex) { CommandPatterns::ARCHIVEONLY_MANY }
+
+    it 'recognizes !ao < SOURCE' do
+      md = regex.match '!ao < http://pastebin.com/123456'
+
+      md[1].should == 'http://pastebin.com/123456'
+    end
+
+    it 'recognizes !ao<SOURCE' do
+      md = regex.match '!ao<http://pastebin.com/123456'
+
+      md[1].should == 'http://pastebin.com/123456'
+    end
+
+    it 'recognizes !ao<SOURCE --ignores=blogs' do
+      md = regex.match '!ao<http://pastebin.com/123456 --ignores=blogs'
+
+      md[1].should == 'http://pastebin.com/123456'
+      md[2].should == '--ignores=blogs'
+    end
+  end
 end
