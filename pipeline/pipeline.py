@@ -24,7 +24,7 @@ from seesaw.util import find_executable
 VERSION = "20140122.01-wpull"
 USER_AGENT = "ArchiveTeam ArchiveBot/%s" % VERSION
 EXPIRE_TIME = 60 * 60 * 48  # 48 hours between archive requests
-WPULL_EXE = find_executable('Wpull', "0.9.1",
+WPULL_EXE = find_executable('Wpull', "0.9.2",
         [ './wpull' ])
 
 if not WPULL_EXE:
