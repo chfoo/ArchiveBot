@@ -1,0 +1,7 @@
+#!/usr/bin/env python3
+
+if __name__ == '__main__':
+    # import sys
+    # sys.path.append('LOCATION_OF_WPULL_PARENT_DIR')
+    import wpull.__main__
+    wpull.__main__.main()

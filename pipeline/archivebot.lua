@@ -37,38 +37,39 @@ local add_as_page_requisite = function(url)
   requisite_urls[url] = true
 end
 
-wget.callbacks.download_child_p = function(urlpos, parent, depth, start_url_parsed, iri, verdict, reason)
+wpull_hook.callbacks.accept_url = function(url_info, record_info, verdict, reasons)
   -- Does the URL match any of the ignore patterns?
-  local pattern = archivebot.ignore_url_p(urlpos.url.url)
+  local pattern = archivebot.ignore_url_p(url_info.url)
 
   if pattern then
-    log_ignored_url(urlpos.url.url, pattern)
+    log_ignored_url(url_info.url, pattern)
     return false
   end
 
   -- Second-guess wget's host-spanning restrictions.
-  if not verdict and reason == 'DIFFERENT_HOST' then
+  if not verdict and is_span_host_filter_failed_only(reasons.filters) then
     -- Is the parent a www.example.com and the child an example.com, or vice
     -- versa?
-    if is_www_to_bare(parent, urlpos.url) then
+    if record_info.referrer_info and 
+    is_www_to_bare(record_info.referrer_info, url_info) then
       -- OK, grab it after all.
       return true
     end
 
     -- Is this a URL of a non-hyperlinked page requisite?
-    if is_page_requisite(urlpos) then
+    if is_page_requisite(record_info) then
       -- Yeah, grab these too.  We also flag the URL as a page requisite here
       -- because we'll need to know that when we calculate the post-request
       -- delay.
-      add_as_page_requisite(urlpos.url.url)
+      add_as_page_requisite(url_info.url)
       return true
     end
   end
 
   -- If we're looking at a page requisite that didn't require verdict
   -- override, flag it as a requisite.
-  if verdict and is_page_requisite(urlpos) then
-    add_as_page_requisite(urlpos.url.url)
+  if verdict and is_page_requisite(record_info) then
+    add_as_page_requisite(url_info.url)
   end
 
   -- If we get here, none of our exceptions apply.  Return the original
@@ -101,29 +102,28 @@ local is_warning = function(statcode, err)
   return statcode >= 400 and statcode < 500
 end
 
-wget.callbacks.httploop_proceed_p = function(url, http_stat)
-  local pattern = archivebot.ignore_url_p(url.url)
-
-  if pattern then
-    log_ignored_url(url.url, pattern)
-    return false
+local handle_result = function(url_info, error_info, http_info)
+  if http_info then
+    -- Update the traffic counters.
+    rconn:hincrby(ident, 'bytes_downloaded', http_info.body.content_size)
   end
 
-  return true
-end
+  local statcode = 0
+  local error = nil
 
-wget.callbacks.httploop_result = function(url, err, http_stat)
-  -- Update the traffic counters.
-  rconn:hincrby(ident, 'bytes_downloaded', http_stat.rd_size)
-
-  local statcode = http_stat['statcode']
+  if http_info then
+    statcode = http_info['status_code']
+  end
+  if error_info then
+    error = error_info['error']
+  end
 
   -- Record the current time, URL, response code, and wget's error code.
   local result = {
     ts = os.time(),
-    url = url.url,
+    url = url_info.url,
     response_code = statcode,
-    wget_code = err,
+    wget_code = error,
     is_error = is_error(statcode, err),
     is_warning = is_warning(statcode, err),
     type = 'download'
@@ -146,7 +146,7 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
     io.stdout:flush()
     do_abort(1, ident, log_channel)
 
-    return wget.actions.ABORT
+    return wpull_hook.actions.STOP
   end
 
   -- OK, we've finished our fetch attempt.  Now we need to figure out how much
@@ -154,9 +154,9 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
   -- non-page requisites because browsers act that way.
   local sl, sm
 
-  if requisite_urls[url.url] then
+  if requisite_urls[url_info.url] then
     -- Yes, this will eventually free the memory needed for the key
-    requisite_urls[url.url] = nil
+    requisite_urls[url_info.url] = nil
 
     sl, sm = archivebot.pagereq_delay_time_range()
   else
@@ -165,12 +165,20 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
 
   socket.sleep(math.random(sl, sm) / 1000)
 
-  return wget.actions.NOTHING
+  return wpull_hook.actions.NORMAL
 end
 
-wget.callbacks.finish = function(start_time, end_time, wall_time, numurls, total_downloaded_bytes, total_download_time)
+wpull_hook.callbacks.handle_response = function(url_info, http_info)
+  return handle_result(url_info, nil, http_info)
+end
+
+wpull_hook.callbacks.handle_error = function(url_info, error_info)
+  return handle_result(url_info, error_info, nil)
+end
+
+wpull_hook.callbacks.finish_statistics = function(start_time, end_time, num_urls, bytes_downloaded)
   io.stdout:write("  ")
-  io.stdout:write(total_downloaded_bytes.." bytes.")
+  io.stdout:write(bytes_downloaded.." bytes.")
   io.stdout:write("\n")
   io.stdout:flush()
 end

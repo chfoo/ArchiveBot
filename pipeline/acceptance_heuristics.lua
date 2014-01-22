@@ -1,9 +1,8 @@
 -- Is this a URL of a non-hyperlinked page requisite?
-is_page_requisite = function(urlpos)
-  local is_html_link = urlpos['link_expect_html']
-  local is_requisite = urlpos['link_inline_p']
+is_page_requisite = function(record_info)
+  local is_requisite = record_info['inline']
 
-  return is_html_link ~= 1 and is_requisite == 1
+  return is_requisite == 1
 end
 
 -- Given two URLs A and B, determines whether a link between A and B is
@@ -37,14 +36,24 @@ is_www_to_bare = function(parent, child)
 
   -- Is the parent a www.example.com and the child an example.com, or vice
   -- versa?
-  local p_to_bare = www_to_bare_p(parent.host, child.host)
-  local bare_to_p = www_to_bare_p(child.host, parent.host)
+  local p_to_bare = www_to_bare_p(parent.hostname, child.hostname)
+  local bare_to_p = www_to_bare_p(child.hostname, parent.hostname)
 
   -- Is the parent's path a subpath of the child's path?
   local start = string.find(child.path, parent.path, 1, true)
   local is_subpath = (start == 1)
 
   return (p_to_bare or bare_to_p) and is_subpath
+end
+
+is_span_host_filter_failed_only = function(filter_statuses)
+  for name, passed in pairs(filter_statuses) do
+    if not passed and name ~= 'SpanHostsFilter' then
+      return false
+    end
+  end
+
+  return filter_statuses['SpanHostsFilter'] == false
 end
 
 -- vim:ts=2:sw=2:et:tw=78
