@@ -21,10 +21,10 @@ from seesaw.externalprocess import *
 
 from seesaw.util import find_executable
 
-VERSION = "20140122.02-wpull"
+VERSION = "20140123.01-wpull"
 USER_AGENT = "ArchiveTeam ArchiveBot/%s" % VERSION
 EXPIRE_TIME = 60 * 60 * 48  # 48 hours between archive requests
-WPULL_EXE = find_executable('Wpull', "0.9.3",
+WPULL_EXE = find_executable('Wpull', "0.9.4",
         [ './wpull' ])
 
 if not WPULL_EXE:
@@ -368,7 +368,7 @@ class WpullArgs(object):
     def realize(self, item):
         args = [WPULL_EXE,
             '-U', USER_AGENT,
-            '-nv',
+            '-nv',  # use --quiet if wpull is still too chatty
             '--ascii-print',
             '-o', realize(ItemInterpolation('%(item_dir)s/wpull.log'), item),
             '--database', realize(ItemInterpolation('%(item_dir)s/wpull.db'), item),
