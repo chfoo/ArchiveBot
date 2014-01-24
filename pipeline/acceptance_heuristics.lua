@@ -2,7 +2,7 @@
 is_page_requisite = function(record_info)
   local is_requisite = record_info['inline']
 
-  return is_requisite == 1
+  return record_info['link_type'] ~= 'html' and is_requisite == 1
 end
 
 -- Given two URLs A and B, determines whether a link between A and B is
