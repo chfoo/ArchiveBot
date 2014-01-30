@@ -1,3 +1,5 @@
+import re
+
 # Is this a URL of a non-hyperlinked page requisite?
 def is_page_requisite(record_info):
   is_html_link = record_info['link_type']

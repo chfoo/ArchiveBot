@@ -20,30 +20,16 @@
 # the generated function.  If you re-establish a Redis connection, you must
 # regenerate the script function.
 def eval_redis(script, rconn):
-  script_sha = None
+  wrapper = ScriptWrapper(script, rconn)
+  return wrapper
 
-  def run_script(*args, **kwargs):
-    return rconn.evalsha(script_sha, *args, **kwargs)
 
-  # local x = function() behaves like let.  local function x() behaves more
-  # like letrec.
-  # Go figure.
-  def helper(*args, **kwargs):
-    if script_sha is None:
-      script_sha = rconn.script('LOAD', script)
+class ScriptWrapper(object):
+  def __init__(self, script, rconn):
+    self.script = rconn.register_script(script)
 
-    ok, result = pcall(run_script, *args, **kwargs)
-
-    if ok:
-      return result
-    else:
-      if isinstance(result, str) and re.match('NOSCRIPT', result):
-        script_sha = None
-        return helper(*args, **kwargs)
-      else:
-        error(result)
-
-  return helper
+  def __call__(self, *args):
+    return self.script(args=args)
 
 
 # vim:ts=2:sw=2:et:tw=78

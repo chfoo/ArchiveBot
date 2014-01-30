@@ -11,7 +11,7 @@ import redis
 
 
 ident = os.environ['ITEM_IDENT']
-rconn = redis.connect(['REDIS_HOST'], os.environ['REDIS_PORT'])
+rconn = redis.StrictRedis(host=os.environ['REDIS_HOST'], port=os.environ['REDIS_PORT'], db=os.environ['REDIS_DB'])
 aborter = os.environ['ABORT_SCRIPT']
 log_key = os.environ['LOG_KEY']
 log_channel = os.environ['LOG_CHANNEL']
@@ -19,7 +19,6 @@ log_channel = os.environ['LOG_CHANNEL']
 do_abort = redis_script_exec.eval_redis(os.environ['ABORT_SCRIPT'], rconn)
 do_log = redis_script_exec.eval_redis(os.environ['LOG_SCRIPT'], rconn)
 
-rconn.select(os.environ['REDIS_DB'])
 
 # Generates a log entry for ignored URLs.
 def log_ignored_url(url, pattern):
@@ -36,7 +35,7 @@ def log_ignored_url(url, pattern):
 requisite_urls = {}
 
 def add_as_page_requisite(url):
-  requisite_urls[url] = true
+  requisite_urls[url] = True
 
 
 def accept_url(url_info, record_info, verdict, reasons):
@@ -45,10 +44,10 @@ def accept_url(url_info, record_info, verdict, reasons):
 
   if pattern:
     log_ignored_url(url_info['url'], pattern)
-    return True
+    return False
 
   # Second-guess wget's host-spanning restrictions.
-  if not verdict and acceptance_heuristics.cis_span_host_filter_failed_only(reasons['filters']):
+  if not verdict and acceptance_heuristics.is_span_host_filter_failed_only(reasons['filters']):
     # Is the parent a www.example.com and the child an example.com, or vice
     # versa?
     if record_info['referrer_info'] and \
@@ -109,7 +108,7 @@ def handle_result(url_info, error_info, http_info):
 
   if pattern:
     log_ignored_url(url_info['url'], pattern)
-    return True
+    return wpull_hook.actions.FINISH
 
   if http_info:
     statcode = http_info['status_code']
@@ -125,7 +124,7 @@ def handle_result(url_info, error_info, http_info):
     wget_code=error,
     is_error=is_error(statcode, error),
     is_warning=is_warning(statcode, error),
-    type = 'download'
+    type='download'
   )
 
   # Publish the log entry, and bump the log counter.
@@ -140,14 +139,14 @@ def handle_result(url_info, error_info, http_info):
     print("Wget terminating on bot command")
     do_abort(1, ident, log_channel)
 
-    return wpull_hook.actions.ABORT
+    return wpull_hook.actions.STOP
 
   # OK, we've finished our fetch attempt.  Now we need to figure out how much
   # we should delay.  We delay different amounts for page requisites vs.
   # non-page requisites because browsers act that way.
   sl, sm = None, None
 
-  if requisite_urls[url_info['url']]:
+  if requisite_urls.get(url_info['url']):
     # Yes, this will eventually free the memory needed for the key
     requisite_urls[url_info['url']] = None
 
@@ -161,7 +160,7 @@ def handle_result(url_info, error_info, http_info):
 
 
 def handle_response(url_info, http_info):
-  return handle_result(url_info, nil, http_info)
+  return handle_result(url_info, None, http_info)
 
 
 def handle_error(url_info, error_info):
