@@ -5,7 +5,7 @@ def is_page_requisite(record_info):
   is_html_link = record_info['link_type']
   is_requisite = record_info['inline']
 
-  return is_html_link != 'html' and is_requisite == 1
+  return is_html_link != 'html' and is_requisite
 
 
 # Given two URLs A and B, determines whether a link between A and B is
