@@ -107,7 +107,7 @@ def main():
 
     print('Wait to avoid reconnect flooding')
     for dummy in range(100):
-        irc_client.manifold.process_once(timeout=0.1)
+        irc_client.reactor.process_once(timeout=0.1)
         time.sleep(0.1)
         print('.', end='')
         sys.stdout.flush()
@@ -156,7 +156,7 @@ def main():
     start_time = time.time()
 
     while True:
-        irc_client.manifold.process_once(timeout=0.2)
+        irc_client.reactor.process_once(timeout=0.2)
 
         time_now = time.time()
 
