@@ -18,7 +18,7 @@ install:
   - python3.4 -m pip install -r pipeline/requirements.txt --user
   - python3.4 -m pip install nose irc --user
   - sudo cp test/example_rsyncd.conf /etc/rsyncd.conf
-  - python3.4 -m pip install git+https://github.com/chfoo/huhhttp#egg=huhhttp
+  - python3.4 -m pip install git+https://github.com/chfoo/huhhttp#egg=huhhttp --user
 
 before_script:
   - curl -X PUT http://localhost:5984/archivebot
