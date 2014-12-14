@@ -118,7 +118,7 @@ def main():
     dashboard_proc = subprocess.Popen([dashboard_script], preexec_fn=os.setpgrp)
     pipeline_proc = subprocess.Popen([pipeline_script], preexec_fn=os.setpgrp)
     web_proc = subprocess.Popen(
-        ['python3', '-m', 'huhhttp', '--port', '8866'],
+        ['python3.4', '-m', 'huhhttp', '--port', '8866'],
         preexec_fn=os.setpgrp
     )
 
