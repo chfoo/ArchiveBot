@@ -173,7 +173,12 @@ class Database(object):
                 identifier = row[0]
 
                 _logger.info('Populating item %s.', identifier)
-                files = yield self._api.get_item_files(identifier)
+
+                try:
+                    files = yield self._api.get_item_files(identifier)
+                except tornado.httpclient.HTTPError:
+                    _logger.exception("Couldn't populate item %s", identifier)
+                    continue
 
                 query = insert(File).prefix_with('OR IGNORE')
                 values = []
