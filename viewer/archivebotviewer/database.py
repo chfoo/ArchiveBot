@@ -414,27 +414,23 @@ class API(object):
     def get_item_list(self):
         item_identifiers = []
 
-        for page in itertools.count(1):
-            url = tornado.httputil.url_concat(self.SEARCH_URL, {
-                'q': 'collection:archivebot',
-                'fl[]': 'identifier,publicdate,imagecount',
-                'sort[]': 'addeddate asc',
-                'output': 'json',
-                'rows': '100',
-                'page': str(page),
-            })
+        url = tornado.httputil.url_concat(self.SEARCH_URL, {
+            'q': 'collection:archivebot',
+            'fl[]': 'identifier,publicdate,imagecount',
+            'sort[]': 'addeddate asc',
+            'output': 'json',
+            'rows': '100000000',
+        })
 
-            _logger.info('Fetch %s', url)
+        _logger.info('Fetch %s', url)
 
-            response = yield self._client.fetch(url)
-            response.rethrow()
+        response = yield self._client.fetch(url)
+        response.rethrow()
 
-            doc = json.loads(response.body.decode('utf-8', 'replace'))
-            results = doc['response']['docs']
+        doc = json.loads(response.body.decode('utf-8', 'replace'))
+        results = doc['response']['docs']
 
-            if not results:
-                break
-
+        if results:
             for result in results:
                 item_identifiers.append(
                     (result['identifier'], result['publicdate'],
