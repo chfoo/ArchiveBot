@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, time::Duration};
 
 use chrono::{DateTime, Utc};
 use regex::Regex;
@@ -61,7 +61,11 @@ pub struct IAClient {
 
 impl IAClient {
     pub fn new() -> anyhow::Result<Self> {
-        let client = Client::builder().user_agent(USER_AGENT).build()?;
+        let client = Client::builder()
+            .user_agent(USER_AGENT)
+            .read_timeout(Duration::from_secs(60))
+            .connect_timeout(Duration::from_secs(60))
+            .build()?;
 
         Ok(Self {
             client,
